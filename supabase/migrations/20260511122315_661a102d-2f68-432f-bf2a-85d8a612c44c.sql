@@ -1,0 +1,1 @@
+ALTER TABLE public.pharmacy_orders ADD COLUMN IF NOT EXISTS payment_ref text;

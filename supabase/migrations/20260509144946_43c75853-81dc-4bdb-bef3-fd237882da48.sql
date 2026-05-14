@@ -1,0 +1,1 @@
+drop policy if exists "avatars authenticated read" on storage.objects;
