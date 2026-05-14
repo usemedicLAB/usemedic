@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MobileShell, PageHeader } from "@/components/mobile-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, Stethoscope, FileCheck2, Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/overview")({
   head: () => ({ meta: [{ title: "Admin overview — Medic" }] }),
@@ -14,13 +15,21 @@ function Overview() {
     queryKey: ["admin-overview"],
     queryFn: async () => {
       const since = new Date(); since.setDate(since.getDate() - 7); since.setHours(0, 0, 0, 0);
-      const [users, doctors, pending, appts, recentUsers] = await Promise.all([
+      const [users, doctors, pending, apptsList, recentUsers, rxOrdersList, ambList] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("doctor_profiles").select("*", { count: "exact", head: true }).eq("kyc_status", "approved"),
         supabase.from("doctor_profiles").select("*", { count: "exact", head: true }).eq("kyc_status", "pending"),
-        supabase.from("appointments").select("*", { count: "exact", head: true }),
+        supabase.from("appointments").select("fee, paid_at"),
         supabase.from("profiles").select("created_at").gte("created_at", since.toISOString()),
+        supabase.from("pharmacy_orders").select("total, paid_at"),
+        supabase.from("ambulance_bookings").select("fee, status"),
       ]);
+
+      let revenue = 0;
+      (apptsList.data ?? []).forEach((a: any) => { if (a.paid_at) revenue += Number(a.fee ?? 0); });
+      (rxOrdersList.data ?? []).forEach((r: any) => { if (r.paid_at) revenue += Number(r.total ?? 0); });
+      (ambList.data ?? []).forEach((a: any) => { if (a.status === "completed") revenue += Number(a.fee ?? 0); });
+
       // Build 7-day series
       const buckets: Record<string, number> = {};
       for (let i = 6; i >= 0; i--) {
@@ -36,17 +45,22 @@ function Overview() {
         users: users.count ?? 0,
         doctors: doctors.count ?? 0,
         pending: pending.count ?? 0,
-        appts: appts.count ?? 0,
+        appts: apptsList.data?.length ?? 0,
+        rxOrders: rxOrdersList.data?.length ?? 0,
+        ambBookings: ambList.data?.length ?? 0,
+        revenue,
         series,
       };
     },
   });
 
   const cards = [
-    { label: "Users", value: data?.users ?? 0, Icon: Users },
-    { label: "Verified doctors", value: data?.doctors ?? 0, Icon: Stethoscope },
-    { label: "KYC pending", value: data?.pending ?? 0, Icon: FileCheck2 },
-    { label: "Appointments", value: data?.appts ?? 0, Icon: Activity },
+    { label: "Total Revenue", value: `₦${(data?.revenue ?? 0).toLocaleString()}`, Icon: Activity, color: "text-emerald-500" },
+    { label: "Total Users", value: data?.users ?? 0, Icon: Users, color: "text-primary" },
+    { label: "Verified Doctors", value: data?.doctors ?? 0, Icon: Stethoscope, color: "text-primary" },
+    { label: "KYC Pending", value: data?.pending ?? 0, Icon: FileCheck2, color: "text-yellow-500" },
+    { label: "Pharmacy Orders", value: data?.rxOrders ?? 0, Icon: Activity, color: "text-primary" },
+    { label: "Appointments", value: data?.appts ?? 0, Icon: Activity, color: "text-primary" },
   ];
 
   return (
@@ -54,11 +68,11 @@ function Overview() {
       <PageHeader title="Overview" subtitle="Platform health at a glance" />
       <div className="px-5 pt-5">
         <div className="grid grid-cols-2 gap-3">
-          {cards.map(({ label, value, Icon }) => (
+          {cards.map(({ label, value, Icon, color }) => (
             <div key={label} className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
               <div className="flex items-center justify-between">
-                <Icon className="h-5 w-5 text-primary" />
-                <span className="text-xs text-muted-foreground">{label}</span>
+                <Icon className={cn("h-5 w-5", color)} />
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">{label}</span>
               </div>
               <p className="mt-3 font-display text-2xl font-bold">{value}</p>
             </div>

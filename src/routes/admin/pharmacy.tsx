@@ -58,7 +58,7 @@ function AdminPharmacy() {
       const { data } = await supabase
         .from("pharmacy_orders" as any)
         .select(`
-          id, ref, status, total, delivery_address, created_at,
+          id, ref, status, total, delivery_address, created_at, paid_at,
           patient_id, profiles!pharmacy_orders_patient_id_fkey(full_name, phone)
         `)
         .order("created_at", { ascending: false });
@@ -196,8 +196,10 @@ function AdminPharmacy() {
                 <div className="min-w-0 flex-1 pr-3">
                   <p className="text-xs font-semibold text-muted-foreground">Delivery address</p>
                   <p className="text-xs truncate">{o.delivery_address || "None"}</p>
+                <div className="text-right">
+                  <p className="font-bold">₦{Number(o.total).toLocaleString()}</p>
+                  <p className={cn("text-[10px] font-bold uppercase", o.paid_at ? "text-emerald-500" : "text-yellow-500")}>{o.paid_at ? "Paid" : "Unpaid"}</p>
                 </div>
-                <p className="font-bold">₦{Number(o.total).toLocaleString()}</p>
               </div>
             </div>
           ))}
