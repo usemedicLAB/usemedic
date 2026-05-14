@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Pill } from "lucide-react";
+import { Plus, Trash2, Pill, Package } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/pharmacy")({
   head: () => ({ meta: [{ title: "Pharmacy catalog — Admin" }] }),
@@ -25,6 +27,17 @@ const CATS = [
   { v: "wellness", l: "Wellness" },
 ];
 
+const ORDER_STATUSES = ["pending", "processing", "dispatched", "out_for_delivery", "delivered", "cancelled"];
+
+const STATUS_TONE: Record<string, string> = {
+  pending: "bg-muted text-muted-foreground",
+  processing: "bg-yellow-100 text-yellow-800",
+  dispatched: "bg-[#1A73E8]/10 text-[#1A73E8]",
+  out_for_delivery: "bg-[#1A73E8]/10 text-[#1A73E8]",
+  delivered: "bg-emerald-100 text-emerald-700",
+  cancelled: "bg-destructive/10 text-destructive",
+};
+
 function AdminPharmacy() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -36,6 +49,28 @@ function AdminPharmacy() {
       const { data, error } = await supabase.from("pharmacy_products" as any).select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
+    },
+  });
+
+  const { data: orders, isLoading: ordersLoading } = useQuery({
+    queryKey: ["admin-pharmacy-orders"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pharmacy_orders" as any)
+        .select(`
+          id, ref, status, total, delivery_address, created_at,
+          patient_id, profiles!pharmacy_orders_patient_id_fkey(full_name, phone)
+        `)
+        .order("created_at", { ascending: false });
+      
+      const ids = (data ?? []).map((o: any) => o.id);
+      const { data: items } = ids.length 
+        ? await supabase.from("pharmacy_order_items" as any).select("order_id, name, quantity").in("order_id", ids)
+        : { data: [] } as any;
+        
+      const byOrder = new Map<string, any[]>();
+      (items ?? []).forEach((it: any) => { const arr = byOrder.get(it.order_id) ?? []; arr.push(it); byOrder.set(it.order_id, arr); });
+      return (data ?? []).map((o: any) => ({ ...o, items: byOrder.get(o.id) ?? [] }));
     },
   });
 
@@ -54,6 +89,11 @@ function AdminPharmacy() {
   const toggleStock = async (id: string, in_stock: boolean) => {
     const { error } = await supabase.from("pharmacy_products" as any).update({ in_stock: !in_stock }).eq("id", id);
     if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["admin-products"] });
+  };
+
+  const updateOrderStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("pharmacy_orders" as any).update({ status }).eq("id", id);
+    if (error) toast.error(error.message); else qc.invalidateQueries({ queryKey: ["admin-pharmacy-orders"] });
   };
 
   const remove = async (id: string) => {
@@ -93,7 +133,13 @@ function AdminPharmacy() {
         </Dialog>
       } />
 
-      <div className="px-5 pt-5 grid grid-cols-2 gap-3">
+      <Tabs defaultValue="catalog" className="px-5 pt-4">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="catalog">Catalog</TabsTrigger>
+          <TabsTrigger value="orders">Orders</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="catalog" className="mt-4 grid grid-cols-2 gap-3 pb-10">
         {isLoading && <p className="col-span-2 py-10 text-center text-sm text-muted-foreground">Loading…</p>}
         {!isLoading && (products?.length ?? 0) === 0 && (
           <div className="col-span-2 rounded-xl border border-dashed border-border bg-surface p-10 text-center text-sm text-muted-foreground">No products yet.</div>
@@ -113,7 +159,50 @@ function AdminPharmacy() {
             <button onClick={() => remove(p.id)} className="mt-2 inline-flex items-center gap-1 text-xs text-destructive"><Trash2 className="h-3 w-3" /> Delete</button>
           </div>
         ))}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="orders" className="mt-4 space-y-3 pb-10">
+          {ordersLoading && <p className="py-10 text-center text-sm text-muted-foreground">Loading…</p>}
+          {!ordersLoading && (orders?.length ?? 0) === 0 && (
+            <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center">
+              <Package className="mx-auto h-7 w-7 text-muted-foreground" />
+              <p className="mt-2 text-sm text-muted-foreground">No orders yet.</p>
+            </div>
+          )}
+          {(orders ?? []).map((o: any) => (
+            <div key={o.id} className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">#{o.ref} · {new Date(o.created_at).toLocaleDateString()}</p>
+                  <p className="font-semibold">{o.profiles?.full_name || "Customer"}</p>
+                  <p className="text-xs text-muted-foreground">{o.profiles?.phone || "No phone"}</p>
+                </div>
+                <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v)}>
+                  <SelectTrigger className={cn("h-7 w-[120px] text-[11px] font-semibold capitalize", STATUS_TONE[o.status])}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ORDER_STATUSES.map(s => (
+                      <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="rounded-lg bg-surface p-2 text-xs">
+                <p className="font-semibold text-muted-foreground mb-1">Items</p>
+                <p className="truncate">{(o.items ?? []).map((i: any) => `${i.quantity}× ${i.name}`).join(", ") || "No items"}</p>
+              </div>
+              <div className="flex items-end justify-between">
+                <div className="min-w-0 flex-1 pr-3">
+                  <p className="text-xs font-semibold text-muted-foreground">Delivery address</p>
+                  <p className="text-xs truncate">{o.delivery_address || "None"}</p>
+                </div>
+                <p className="font-bold">₦{Number(o.total).toLocaleString()}</p>
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
     </MobileShell>
   );
 }

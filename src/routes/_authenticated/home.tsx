@@ -4,6 +4,7 @@ import { MobileShell } from "@/components/mobile-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Heart, Brain, Baby, Bone, Sparkles, Stethoscope, Calendar, Star, LayoutGrid, Megaphone, Video } from "lucide-react";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Home — Medic" }] }),
@@ -30,7 +31,6 @@ function Home() {
     enabled: !!user,
   });
   const fullName = profile?.full_name || user?.email?.split("@")[0] || "there";
-  const initials = fullName.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <MobileShell role="user">
@@ -38,9 +38,7 @@ function Home() {
         {/* Greeting */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[image:var(--gradient-primary)] text-sm font-bold text-white shadow-[var(--shadow-glow)]">
-              {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials}
-            </div>
+            <AvatarDisplay url={profile?.avatar_url} className="h-12 w-12 bg-[image:var(--gradient-primary)] shadow-[var(--shadow-glow)]" fallbackClassName="bg-transparent" iconClassName="text-white" />
             <div>
               <p className="text-xs text-muted-foreground">Hello</p>
               <p className="font-display text-[17px] font-bold leading-tight">{fullName}!</p>
@@ -122,13 +120,10 @@ function RecentVisits() {
   return (
     <div className="no-scrollbar -mx-5 mt-3 flex gap-3 overflow-x-auto px-5">
       {data.map((a: any) => {
-        const initials = (a.doctor_name ?? "Dr").split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
         return (
           <Link key={a.id} to="/doctors/$id" params={{ id: a.doctor_id }} className="min-w-[240px] overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary-soft text-sm font-bold text-primary">
-                {a.doctor_avatar ? <img src={a.doctor_avatar} alt="" className="h-full w-full object-cover" /> : initials}
-              </div>
+              <AvatarDisplay url={a.doctor_avatar} className="h-12 w-12 rounded-2xl bg-primary-soft" fallbackClassName="bg-transparent" iconClassName="text-primary" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{a.doctor_name ?? "Doctor"}</p>
                 <p className="truncate text-[11px] text-muted-foreground">{a.specialty ?? "Specialist"}</p>

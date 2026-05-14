@@ -4,6 +4,7 @@ import { MobileShell } from "@/components/mobile-shell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Star, MapPin, Award, Users, Calendar } from "lucide-react";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 
 export const Route = createFileRoute("/_authenticated/doctors/$id")({
   head: () => ({ meta: [{ title: "Doctor — Medic" }] }),
@@ -34,17 +35,16 @@ function DoctorProfile() {
   if (!data?.d) return <MobileShell role="user"><div className="p-10 text-center"><p className="text-sm text-muted-foreground">Doctor not found.</p><Button asChild variant="hero" className="mt-4 rounded-full"><Link to="/doctors">Back</Link></Button></div></MobileShell>;
   const d: any = data.d;
   const fullName = d.profile?.full_name || "Doctor";
-  const initials = fullName.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <MobileShell role="user">
       {/* Hero */}
-      <div className="relative bg-[image:var(--gradient-hero)] px-5 pt-6 pb-16 text-white">
+      <div className="relative bg-[image:var(--gradient-hero)] px-5 pt-6 pb-24 text-white">
         <div className="flex items-center justify-between">
           <Link to="/doctors" aria-label="Back" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15"><ArrowLeft className="h-5 w-5" /></Link>
         </div>
         <div className="mt-4 flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold">{initials}</div>
+          <AvatarDisplay url={d.profile?.avatar_url} className="h-20 w-20 rounded-2xl bg-white/20" fallbackClassName="bg-transparent" iconClassName="text-white/70" />
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-wider text-white/70">{d.specialty ?? "Specialist"}</p>
             <h1 className="font-display text-2xl font-bold leading-tight">{fullName}</h1>
@@ -73,7 +73,7 @@ function DoctorProfile() {
         </div>
       </div>
 
-      <div className="px-5 pt-6 pb-32 space-y-6">
+      <div className="px-5 pt-6 pb-48 space-y-6">
         <section>
           <h2 className="font-display font-bold">About</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">{d.bio || "No bio provided yet."}</p>

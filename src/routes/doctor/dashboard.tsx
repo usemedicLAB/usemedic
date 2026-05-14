@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { ShieldCheck, ShieldAlert, Clock, Calendar, MessageCircle, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 
 export const Route = createFileRoute("/doctor/dashboard")({
   head: () => ({ meta: [{ title: "Doctor dashboard — Medic" }] }),
@@ -62,7 +63,6 @@ function Dashboard() {
 
   const status = profile?.kyc_status ?? "pending";
 
-  const initials = fullName.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
 
   const openConsultation = async (appointmentId: string) => {
     const { data, error } = await supabase.rpc("get_or_create_consultation", { _appointment_id: appointmentId });
@@ -72,9 +72,7 @@ function Dashboard() {
   return (
     <MobileShell role="doctor">
       <div className="flex items-center gap-3 px-5 pt-8">
-        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-[image:var(--gradient-primary)] text-sm font-bold text-white shadow-[var(--shadow-glow)]">
-          {meProfile?.avatar_url ? <img src={meProfile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials}
-        </div>
+        <AvatarDisplay url={meProfile?.avatar_url} className="h-12 w-12 bg-[image:var(--gradient-primary)] shadow-[var(--shadow-glow)]" fallbackClassName="bg-transparent" iconClassName="text-white" />
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Welcome back</p>
           <p className="font-display text-[17px] font-bold leading-tight truncate">Dr. {fullName}</p>

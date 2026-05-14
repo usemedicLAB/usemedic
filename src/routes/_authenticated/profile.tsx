@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, FileText, Loader2, Camera, Upload, Trash2, FileImage } from "lucide-react";
 import { toast } from "sonner";
+import { AvatarDisplay } from "@/components/ui/avatar-display";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile — Medic" }] }),
@@ -53,14 +54,14 @@ function Profile() {
     toast.success("Avatar updated");
   };
 
-  const initials = (form.full_name || user?.email || "U").slice(0, 2).toUpperCase();
+
   return (
     <MobileShell role="user">
       <PageHeader title="Profile" />
       <div className="px-5 pt-6 pb-6">
         <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-soft)]">
           <label className="relative flex h-16 w-16 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-[image:var(--gradient-primary)] text-lg font-bold text-white">
-            {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials}
+            <AvatarDisplay url={profile?.avatar_url} className="h-16 w-16 bg-[image:var(--gradient-primary)]" fallbackClassName="bg-transparent" iconClassName="text-white" />
             <span className="absolute -bottom-0 -right-0 flex h-6 w-6 items-center justify-center rounded-full bg-card text-primary border border-border"><Camera className="h-3 w-3" /></span>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }} />
           </label>
