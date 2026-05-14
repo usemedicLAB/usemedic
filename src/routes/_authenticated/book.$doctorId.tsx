@@ -47,13 +47,28 @@ function Book() {
     const d = new Date(); d.setDate(d.getDate() + i); return d;
   }), []);
 
+  const { data: bookedSlotsData } = useQuery({
+    queryKey: ["doctor-booked-slots", doctorId, dayOffset],
+    queryFn: async () => {
+      const day = days[dayOffset];
+      const dateStr = day.toISOString().split('T')[0];
+      const { data, error } = await supabase.rpc("get_doctor_booked_slots", { p_doctor_id: doctorId, p_date: dateStr });
+      if (error) return [];
+      return data.map((r: any) => r.scheduled_time.slice(0, 5));
+    },
+    enabled: !!doctorId && !!days[dayOffset],
+  });
+
+  const bookedSlots = useMemo(() => new Set<string>(bookedSlotsData ?? []), [bookedSlotsData]);
+
   const slots = useMemo(() => {
     const day = days[dayOffset]; if (!day) return [];
     const wd = day.getDay();
     const ranges = (data?.av ?? []).filter((a: any) => a.weekday === wd);
     if (!ranges.length) {
       // Sensible default: 9-12 and 14-17 in 30 min slots
-      return ["09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30"];
+      const defaults = ["09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30"];
+      return defaults.filter(t => !bookedSlots.has(t));
     }
     const out: string[] = [];
     for (const r of ranges) {
@@ -61,12 +76,15 @@ function Book() {
       const [eh, em] = r.end_time.split(":").map(Number);
       let mins = sh * 60 + sm; const end = eh * 60 + em;
       while (mins + 30 <= end) {
-        out.push(`${String(Math.floor(mins/60)).padStart(2,"0")}:${String(mins%60).padStart(2,"0")}`);
+        const timeStr = `${String(Math.floor(mins/60)).padStart(2,"0")}:${String(mins%60).padStart(2,"0")}`;
+        if (!bookedSlots.has(timeStr)) {
+          out.push(timeStr);
+        }
         mins += 30;
       }
     }
     return out;
-  }, [days, dayOffset, data]);
+  }, [days, dayOffset, data, bookedSlots]);
 
   const submit = async () => {
     if (!user || !slot) return;

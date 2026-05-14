@@ -160,7 +160,7 @@ function Thread() {
       </div>
 
       {callOpen && (
-        <ConsultationCall mode={callOpen} participantName={ctx?.other ?? "Participant"} onEnd={() => setCallOpen(null)} />
+        <ConsultationCall roomName={`medic-consultation-${id}`} mode={callOpen} participantName={ctx?.other ?? "Participant"} onEnd={() => setCallOpen(null)} />
       )}
     </div>
   );

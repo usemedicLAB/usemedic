@@ -57,7 +57,7 @@ function DoctorProfile() {
       </div>
 
       {/* Stat pills */}
-      <div className="-mt-10 px-5">
+      <div className="relative z-10 -mt-10 px-5">
         <div className="grid grid-cols-3 gap-3">
           {[
             { Icon: Award, label: "Experience", value: `${d.years_exp ?? 0}y` },
