@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://usemedic.pages.dev");
+        webView.loadUrl("https://usemedic.com.ng");
     }
 
     @Override
