@@ -44,12 +44,12 @@ function Landing() {
             <p className="mt-4 font-display text-base font-bold leading-tight">Care from afar</p>
             <p className="mt-1 text-xs text-muted-foreground">Verified doctors, on demand.</p>
           </article>
-          <article className="rounded-3xl bg-rose-500 p-5 text-white shadow-2xl">
-            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15">
+          <article className="rounded-3xl bg-primary-soft p-5 text-primary-deep shadow-2xl">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary text-white">
               <Ambulance className="h-4.5 w-4.5" />
             </div>
             <p className="mt-4 font-display text-base font-bold leading-tight">Emergency 24/7</p>
-            <p className="mt-1 text-xs text-white/85">Rapid ambulance response.</p>
+            <p className="mt-1 text-xs text-primary-deep/80">Rapid ambulance response.</p>
           </article>
         </div>
 

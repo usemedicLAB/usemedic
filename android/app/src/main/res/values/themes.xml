@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MedicFullscreen" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Brand Colors matching oklch(0.62 0.17 145) -->
+        <item name="colorPrimary">#10B981</item>
+        <item name="colorPrimaryVariant">#047857</item>
+        <item name="colorSecondary">#34D399</item>
+        
+        <!-- Status bar matching the gradient background -->
+        <item name="android:statusBarColor">#10B981</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+</resources>
